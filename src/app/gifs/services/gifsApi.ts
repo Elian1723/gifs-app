@@ -6,12 +6,21 @@ import { Gif } from '../interfaces/gif';
 import { GifMapper } from '../mapper/gif-mapper';
 import { map, Observable, tap } from 'rxjs';
 
+const loadHistoryFromLocalStorage = (): Record<string, Gif[]> => {
+  const history = localStorage.getItem('search-history');
+
+  if (history) {
+    return JSON.parse(history) ?? [];
+  }
+  return {};
+}
+
 @Injectable({providedIn: 'root'})
 export class GifsApi {
   private http = inject(HttpClient);
   public trendingGifs = signal<Gif[]>([]);
   private trendingGifsLoading = signal(false);
-  private searchHistory = signal<Record<string, Gif[]>>({});
+  private searchHistory = signal<Record<string, Gif[]>>(loadHistoryFromLocalStorage());
   public searchHistoryKeys = computed(() => Object.keys(this.searchHistory()));
 
   constructor(){
@@ -51,4 +60,8 @@ export class GifsApi {
   public getHistoryGifs(query: string): Gif[] {
     return this.searchHistory()[query] ?? [];
   }
+
+  protected saveHistoryToLocalStorage = effect(() => {
+    localStorage.setItem('search-history', JSON.stringify(this.searchHistory()));
+  })
 }
